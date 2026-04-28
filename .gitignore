@@ -1,0 +1,7 @@
+outputs/*.csv
+outputs/scored_transactions.csv
+outputs/raw_transactions.csv
+outputs/flagged_transactions.csv
+__pycache__/
+*.pyc
+.DS_Store
