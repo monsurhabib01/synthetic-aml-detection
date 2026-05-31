@@ -1,84 +1,36 @@
-# MFS Transaction Anomaly Detection System
-**AML Compliance Solution for Bangladesh Mobile Financial Services**
+# Bangladesh MFS AML Detection System
 
-![Dashboard Preview](images/aml_dashboard.png)
+**Rule-Based Transaction Monitoring Engine for bKash/Nagad | BFIU-Calibrated**
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ---
 
 ## 🎯 Project Overview
 
-A rule-based transaction monitoring engine (TME) designed specifically for Bangladesh's mobile financial services (MFS) ecosystem, with behavioral patterns calibrated to bKash, Nagad, and Rocket transaction flows.
+A production-grade rule-based Transaction Monitoring Engine (TME) built specifically for Bangladesh's Mobile Financial Services (MFS) ecosystem. Behavioral patterns are calibrated to bKash, Nagad, and Rocket transaction flows under BFIU (Bangladesh Financial Intelligence Unit) guidelines.
 
-**Built to address**: The unique compliance challenges of BD MFS operators under BFIU (Bangladesh Financial Intelligence Unit) guidelines, where traditional global AML models fail to account for local transaction behaviors.
-
----
-
-## 📊 Dashboard Features
-
-The system generates comprehensive compliance dashboards with 6 key visualizations:
-
-1. **Risk Tier Distribution** - Low/Medium/High risk segmentation of flagged transactions
-2. **Amount Distribution Analysis** - Normal vs flagged transaction patterns  
-3. **Temporal Risk Patterns** - Hour-by-hour flagging rates to identify suspicious timing
-4. **Rule Hit Frequency** - Which AML rules trigger most often (High Value, Velocity, Structuring, etc.)
-5. **Risk Score Distribution** - Composite scoring with MEDIUM/HIGH thresholds
-6. **Monthly Monitoring Trends** - Transaction volume and risk evolution over time
-
-**1,131 transactions flagged** from sample dataset with granular risk scoring and rule attribution.
+**The problem it solves**: Global AML systems generate massive false positives on BD MFS data — flagging normal BDT 500/1000/5000 round-amount transactions as suspicious. This engine is calibrated to BD-specific norms.
 
 ---
 
-## 🔍 The Problem
+## 🔍 AML Rules Engine
 
-Bangladesh MFS platforms process millions of daily transactions with unique characteristics:
+| Rule | Weight | Logic |
+|------|--------|-------|
+| STRUCTURING | 35 | ≥3 txns in 24h all between 80–100% of BDT 10,000 threshold |
+| DORMANT_SPIKE | 30 | Account inactive 30+ days suddenly transacts above BDT 10,000 |
+| VELOCITY | 25 | ≥5 txns within any 60-minute rolling window |
+| LATE_NIGHT | 15 | Transactions between 01:00–04:00 AM |
+| ROUND_AMOUNT | 10 | ≥BDT 50,000 AND ≥5× sender's own median (eliminates false positives) |
+| HIGH_VALUE | 10 | Single txn above BDT 20,000 |
 
-- **Round-amount dominance**: BDT 500/1000/5000 transactions are culturally normative, not suspicious
-- **cash_out prevalence**: 60-70% of bKash transactions are withdrawals, unlike Western digital wallets
-- **Regulatory thresholds**: BFIU guidelines set BDT 100,000 as the key monitoring threshold
-- **High false positive rates**: Global AML systems flag normal BD behavior as suspicious
-
-**Result**: Compliance teams waste hours investigating false positives while real anomalies slip through.
-
----
-
-## ✅ The Solution
-
-A three-component system designed for BD MFS reality:
-
-### 1. **Synthetic Data Generator** (`data_generator.py`)
-- Generates realistic MFS transaction datasets
-- Transaction mix: 65% cash_out, 20% send_money, 10% payment, 5% cash_in
-- Amount distributions matching actual bKash patterns
-- Time-of-day clustering (morning/evening peaks)
-
-### 2. **Rule-Based TME** (`rule_based_tme.py`)
-- **6 culturally-calibrated AML rules**:
-  - **High Value**: Large transactions above BDT 100K threshold
-  - **Velocity**: High-frequency patterns (transaction count + recency)
-  - **Structuring**: Multiple transactions just below regulatory threshold
-  - **Round Amount**: Suspicious round figures (only at ≥BDT 50,000 AND ≥5× user median)
-  - **Late Night**: Activity during 3-6 AM window
-  - **Dormant Spike**: Sudden activity from inactive accounts
-
-- **Composite risk scoring**: Weighted multi-rule aggregation
-- **Explainable output**: Each flag includes risk score and triggering rules
-
-### 3. **Compliance Dashboard** (`dashboard.py`)
-- 6-panel visualization system (see screenshot above)
-- Exportable flagged transaction reports
-- Time-series trend analysis
-- Rule performance metrics
-
----
-
-## 🛠️ Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Data Processing | Python (Pandas, NumPy) |
-| Rule Engine | Custom composite scoring algorithm |
-| Visualization | Matplotlib, Seaborn |
-| Data Storage | CSV (extensible to SQL/NoSQL) |
+**Risk Score** = weighted sum of rule hits (0–100)
+- `0–29` → LOW risk
+- `30–59` → MEDIUM risk (review queue)
+- `60–100` → HIGH risk (SAR candidate)
 
 ---
 
@@ -87,17 +39,11 @@ A three-component system designed for BD MFS reality:
 ```
 synthetic-aml-detection/
 │
-├── data_generator.py          # MFS transaction simulator
-├── rule_based_tme.py          # Core TME with BD-calibrated rules
-├── dashboard.py               # Compliance visualization tool
-│
-├── data/
-│   ├── synthetic_transactions.csv    # Generated test data
-│   └── flagged_transactions.csv      # TME output
-│
-├── images/
-│   └── aml_dashboard.png             # Dashboard preview
-│
+├── generate_data.py        # Synthetic bKash-style MFS transaction generator
+├── detect_anomalies.py     # Rule-based TME with composite risk scoring
+├── visualize.py            # Compliance dashboard (6 visualizations)
+├── requirements.txt        # Dependencies
+├── images/                 # Dashboard screenshots
 └── README.md
 ```
 
@@ -106,89 +52,79 @@ synthetic-aml-detection/
 ## 🚀 Quick Start
 
 ```bash
-# Clone repository
 git clone https://github.com/monsurhabib01/synthetic-aml-detection.git
 cd synthetic-aml-detection
+pip install -r requirements.txt
 
-# Install dependencies
-pip install pandas numpy matplotlib seaborn
+# Step 1: Generate synthetic transaction data
+python generate_data.py
 
-# Generate synthetic data
-python data_generator.py
+# Step 2: Run the AML rule engine
+python detect_anomalies.py
 
-# Run TME
-python rule_based_tme.py
-
-# View dashboard
-python dashboard.py
+# Step 3: View compliance dashboard
+python visualize.py
 ```
 
----
-
-## 🎓 Domain Knowledge Applied
-
-This system reflects deep understanding of:
-
-- **BFIU regulatory framework**: BDT 100K thresholds, CTR/STR requirements
-- **BD MFS behavioral norms**: Round amounts, cash_out dominance, peer-to-peer patterns
-- **Cultural transaction patterns**: Small-value high-frequency vs. large one-off behaviors
-- **Compliance pain points**: False positive reduction, explainable flagging logic
-
-**Key calibration**: The Round Amount rule only triggers at ≥BDT 50,000 AND ≥5× user median, preventing false positives on normative BDT 500/1000/5000 transactions.
+Output saved to `outputs/`:
+- `raw_transactions.csv` — generated data (~10,000 rows)
+- `flagged_transactions.csv` — HIGH/MEDIUM risk transactions
+- `scored_transactions.csv` — full dataset with risk scores
 
 ---
 
-## 📈 Sample Results
+## 📊 Synthetic Data — Anomaly Types
 
-From the dashboard above:
-- **1,131 transactions flagged** with risk tier breakdown
-- **Risk distribution**: Majority LOW risk (98.1%), with MEDIUM (1.9%) and HIGH (0.1%) tiers
-- **Top triggering rules**: High Value (755 hits), Velocity (140), Structuring (138)
-- **Temporal patterns**: Peak flagging at hours 2-4 (late night) and 22-23 (evening)
+| Anomaly | Count | Description |
+|---------|-------|-------------|
+| STRUCTURING | ~150 | Multiple txns just below BDT 10,000 threshold in clusters |
+| VELOCITY | ~80 | 6–12 txns within 60 minutes from same account |
+| LATE_NIGHT | ~120 | Txns between 01:00–04:00 AM |
+| ROUND_AMOUNT | ~100 | BDT 50K/100K/200K/500K transfers |
+| DORMANT_SPIKE | ~50 | Dormant account reactivation with high-value txn |
+| NORMAL | ~9,500 | Realistic BD MFS transactions |
 
-**Business impact**: BD-calibrated rules reduce false positive investigation time while maintaining regulatory compliance coverage.
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Data Processing | Python 3.8+, Pandas, NumPy |
+| Rule Engine | Custom weighted composite scoring |
+| Visualization | Matplotlib, Seaborn |
+| Data Format | CSV (extensible to SQL/NoSQL) |
+
+---
+
+## 🎓 BD Domain Knowledge Applied
+
+- **BFIU regulatory framework**: BDT 100K CTR threshold, STR requirements
+- **BD MFS behavioral norms**: 60%+ round-amount transactions are culturally normal (rent, bazar, remittance)
+- **cash_out dominance**: 38% of BD MFS transactions are withdrawals
+- **False positive reduction**: Round Amount rule only fires at ≥BDT 50K AND ≥5× user median
 
 ---
 
 ## 🔮 Roadmap
 
-**Phase 2 Enhancements:**
-- [ ] Machine learning layer (supervised anomaly detection with labeled data)
-- [ ] Real-time API integration capability
-- [ ] Multi-account linkage detection (smurfing patterns)
-- [ ] Regulatory report auto-generation (CTR/STR formats)
-- [ ] Integration with actual MFS transaction APIs
-
----
-
-## 💼 Use Cases
-
-This system is designed for:
-
-- **MFS Operators**: bKash, Nagad, Rocket compliance teams
-- **Banks with MFS**: Compliance officers monitoring agent banking
-- **Fintech Startups**: Building AML into new BD payment platforms
-- **Regulatory Consultants**: Client risk assessment projects
+- [ ] ML layer — supervised anomaly detection with labeled data
+- [ ] Real-time API integration
+- [ ] Multi-account smurfing/layering detection
+- [ ] Auto-generated CTR/STR report format
+- [ ] Network graph analysis for layering patterns
 
 ---
 
 ## 📧 Contact
 
-**Monsur Habib**  
-AML Data Analyst | Bangladesh  
-
-- 🌐 Portfolio: [aitipseveryday.com](https://aitipseveryday.com)
-- 💼 GitHub: [@monsurhabib01](https://github.com/monsurhabib01)
-- 📱 WhatsApp: +880 1521 111893
-
-**Available for freelance AML data consultancy projects.**
+**Monsur Habib** — AML Data Analyst | Dhaka, Bangladesh
+- 🌐 [aitipseveryday.com](https://aitipseveryday.com)
+- 💼 [fiverr.com/mdmonsurhabib](https://www.fiverr.com/mdmonsurhabib)
+- 📧 habibmonsur01@gmail.com
 
 ---
 
 ## 📄 License
 
-This project is open-source for educational and portfolio purposes. For commercial use or customization inquiries, please contact directly.
-
----
-
-**Built with expertise in Bangladesh's AML compliance landscape.**
+MIT — see [LICENSE](LICENSE)
